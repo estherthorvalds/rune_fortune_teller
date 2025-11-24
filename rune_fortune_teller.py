@@ -2,10 +2,9 @@
 Student: Esther Ýr Þorvaldsdóttir
 Course: MLT701F Programming in Language Technoogy (Icel. Forritun í máltækni)
 
-
-Rune Fortune Teller
+RUNE FORTUNE TELLER
 A program that analyzes user text to determine their primary concern.
-(LOVE, HEALTH, or FINANCE) and interprets a rune accordingly.
+Draws and interprets a rune accordingly.
 
 Project Structure:
 ------------------
@@ -18,12 +17,7 @@ rune_fortune_teller/
 │   ├── category_analyzer.py    # Counts keyword matches and determines winner
 │   └── emotion_words.py        # Keyword lists (LOVE, HEALTH, FINANCE)
 └── test_cases/                  # Test texts for validation
-    ├── Meredith_Grey.txt
-    ├── Jane_Villanueva.txt
-    ├── Gordon_Gekko.txt
-    ├── Jordan_Belfort.txt
-    ├── Romeo.txt
-    └── Pam_Beesley.txt
+    └── Various .txt files
 
 Usage:
 1. Concept explained to user
@@ -40,7 +34,6 @@ try:
     import matplotlib.pyplot as plt
     import time
     import string
-    import pickle
     import random
     from spacy.lang.en.stop_words import STOP_WORDS
     from preprocessing import tags_and_lemmas 
@@ -63,23 +56,27 @@ except ModuleNotFoundError as e:
     print("     - spacy (the library)")
     print("  - SpaCy model has not been downloaded")
     print("\nPlease ensure all project files are present and modules are installed.")
-    exit()
 
 """
 NORN CLASS
-Explain this class.
+The Norn Class represents the interaction between the program and the user.
 """
 
 class Norn:
+    MIN_WORDS = 400 # Change the minimum words for the Norns to read. 400 is ideal for the graphs to work.
 
     """The Norn class does not need to store anything in this program. But if it develops, for example if the norns get their own object, this would be where they are stored."""
-    def __init__(self):
-        self.questions_asked = 0  # (instance variable)
+    def __init__(self, fast_mode=False):
+        self.questions_asked = 0 
         self.user_name = ""
         self.user_pronoun = ""
+        self.fast_mode = fast_mode
 
-    def print_slowly(self, text, delay=0.01):
+    def print_slowly(self, text, delay=0.03):
         """Print Norn text for dramatic effect."""
+        if self.fast_mode:
+            print(text)
+            return
         for char in text:
             print(char, end="", flush=True)
             time.sleep(delay)
@@ -96,14 +93,26 @@ class Norn:
         self.print_slowly("Skuld: And all that will be.")
         self.print_slowly("Verðandi: But that is not the way of today. We are polite.")
         self.print_slowly("Skuld: We shall ask for a name and pronoun.")
-        self.print_slowly("Urður: What should we call you, dear seeker?")
         time.sleep(0.3)
+
+        # Get name
         while True:
+            self.print_slowly("Urður: What should we call you, dear seeker?")
             self.user_name = input("My name is: ")
             if self.user_name != "":
-                return
+                break
             else:
                 self.print_slowly("Urður: A name is required. Try again...")
+        # Get pronoun
+
+        while True:
+                self.print_slowly("Urður: What are your pronouns?")
+                self.print_slowly("Skuld: Only nominative case is needed: she / they / he etc.")
+                self.user_pronoun = input("My pronoun is: ")
+                if self.user_pronoun != "":
+                    return
+                else:
+                    self.print_slowly("Urður: A pronoun is required. Try again...")
     
     def explain_concept(self):
         self.print_slowly(f"\nUrður: We welcome you, dear {self.user_name}, to Urðarbrunnur.")
@@ -117,9 +126,8 @@ class Norn:
         self.print_slowly("Urður: You must follow all our instructions for this to work.")
         time.sleep(0.3)
         print()
-        while True:
-            choice = input("Urður: Are you ready to move on? Press ENTER.")
-            return
+        input("Urður: Are you ready to move on? Press ENTER.")
+
         
 
     def explain_imports(self):
@@ -183,103 +191,103 @@ class Norn:
         self.print_slowly("\nSkuld: If installations succeed, you're ready to consult the Norns!")
         self.print_slowly("Urður: If you encounter errors, seek guidance from your terminal's wisdom...")
         print()
-        self.print_slowly("Skuld: Oh and once you have run this program once, so change the 'delay=' to 0.01 in the print_slowly method.")
-        self.print_slowly("Verðandi: Right. This will take forever to loop through again and again.")
         time.sleep(0.5)
 
-        while True:
-            choice = input("Urður: Are you ready to move on? Press ENTER.")
-            return
+        input("Urður: Are you ready to move on? Press ENTER.")
     
     def collect_first_choice(self):
         while True:
-            choice = input("Urður: You wish to upload file or type? (f/t): ")
+            self.print_slowly(f"Verðandi: We need a minimum of {self.MIN_WORDS} in order to read your fortune.")
+            choice = input("Urður: You wish to paste a path to a .txt file (f) or type (t)?: ").lower()
             try:
-                if choice.lower() in ['f', 't']:
+                if choice in ['f', 't']:
                     return choice
             except:
                 print(f"Verðandi: Nahh, {choice} is not an option.")
                 print(f"Skuld: Give it another go.")
 
     def collect_text(self, new_text):
-        while not self.check_word_count(new_text):  
-            self.print_slowly("Urður: This is not enough. You have only given us " + str(len(new_text.split())) + " words so far.")
-            new_text = self.ask_questions()
-            collected_text += " " + new_text
+        collected_text = new_text
+        while not self.check_word_count(collected_text): 
+            word_count = len(collected_text.split())  
+            self.print_slowly(f"Urður: This is not enough. You have only given us {word_count}")
+            more_text = self.ask_questions()
+            collected_text += " " + more_text
         if self.check_word_count(new_text): 
-            return new_text
+            return collected_text # ATHUGA LÓGÍK HÉR
                      
     def check_word_count(self, text):
         word_count = len(text.split())
-        if word_count < 400:
+        if word_count < self.MIN_WORDS:
             return False
         else:
             return True
 
     def read_file(self):
         while True:
-            self.print_slowly("Urður: The full path to your .txt file will lead us, the norns, on the path of your truths... Paste it here:")
+            self.print_slowly("Urður: The full path to your .txt file will lead us, the norns, on the path of your truths...")
+            print("Example: /Users/yourname/Documents/mytext.txt")
+            self.print_slowly("Urður: Paste it here:")
             path = input()
             try:
                 with open(path, "r", encoding="utf-8") as f:
                     text = f.read()
-                    return text
+                    return text.strip() # Get rid of white-spaces
             except FileNotFoundError:
                 self.print_slowly("Urður: This file is nowhere to be found. Try again!")
             except Exception as e:
                 self.print_slowly(f"Urður: Something went terribly wrong: {e}")
 
     def ask_questions(self):
-
-            questions = [
-        "Urður: What brings you to seek the Norns today?",
-        "Verðandi: Tell us about your current situation in life.",
-        "Skuld: What are your hopes for the future?",
-        "Urður: Describe your relationships with those close to you.",
-        "Verðandi: What challenges are you facing right now?",
-        "Skuld: What makes you feel most alive?",
-        "Urður: Tell us about your former dreams and aspirations. Did you achieve them?",
-        "Verðandi: What do you fear most?",
-        "Verðandi: Describe a recent moment that brought you joy.",
-        "Verðandi: What occupies your thoughts most these days?",
-        "Skuld: Tell us about your deepest desires.",
-        "Skuld: What would you change about your life if you could?",
-        "Urður: Tell us about your childhood.",
-        "Urður: Tell us about your teenage years.",
-        "Urður: What is the biggest challange you have faced in your past?",
-        "Verðandi: How do you like your life, right now?",
-        "Verðandi: What do you feel your life purpose is?",
-        "Urður: What made you happy as a child?",
-        "Verðandi: What makes you happy today?",
-        "Skuld: What needs to happen for you to be happy in the future?",
-        "Verðand: What does happiness mean to you?",
-        "Skuld: How would you define success?",
-        "Urður: If you could go back and change one thing about your past, what would it be?",
-        "Verðandi: What do you owe to yourself?",
-        "Urður: What fear have you outgrown?",
-        "Urður: What's the most important life lesson you've learned the hard way?",
-        "Urður: What accomplishment are you most proud of?",
-        "Verðandi: What core values guide your actions and decisions?",
-        "Verðandi: What do you value most in your personal relationships?",
-        "Verðandi: Who in your life really sees you, and how do you know?",
-        "Skuld: How do you approach building trust with someone?",
-        "Verðandi: What makes you feel most loved?",
-        "Verðandi: When do you feel most like yourself?",
-        "Urður: If you could talk to your past self, what would you say?",
-        "Verðandi: What is something about yourself that you have trouble acknowledging?",
-        "Verðandi: What's a misconception people often have about you?",
-        "Verðandi: What is your biggest fear?"
-    ]
+        questions = [
+            "Urður: What brings you to seek the Norns today?",
+            "Verðandi: Tell us about your current situation in life.",
+            "Skuld: What are your hopes for the future?",
+            "Urður: Describe your relationships with those close to you.",
+            "Verðandi: What challenges are you facing right now?",
+            "Skuld: What makes you feel most alive?",
+            "Urður: Tell us about your former dreams and aspirations. Did you achieve them?",
+            "Verðandi: What do you fear most?",
+            "Verðandi: Describe a recent moment that brought you joy.",
+            "Verðandi: What occupies your thoughts most these days?",
+            "Skuld: Tell us about your deepest desires.",
+            "Skuld: What would you change about your life if you could?",
+            "Urður: Tell us about your childhood.",
+            "Urður: Tell us about your teenage years.",
+            "Urður: What is the biggest challange you have faced in your past?",
+            "Verðandi: How do you like your life, right now?",
+            "Verðandi: What do you feel your life purpose is?",
+            "Urður: What made you happy as a child?",
+            "Verðandi: What makes you happy today?",
+            "Skuld: What needs to happen for you to be happy in the future?",
+            "Verðandi: What does happiness mean to you?",
+            "Skuld: How would you define success?",
+            "Urður: If you could go back and change one thing about your past, what would it be?",
+            "Verðandi: What do you owe to yourself?",
+            "Urður: What fear have you outgrown?",
+            "Urður: What's the most important life lesson you've learned the hard way?",
+            "Urður: What accomplishment are you most proud of?",
+            "Verðandi: What core values guide your actions and decisions?",
+            "Verðandi: What do you value most in your personal relationships?",
+            "Verðandi: Who in your life really sees you, and how do you know?",
+            "Skuld: How do you approach building trust with someone?",
+            "Verðandi: What makes you feel most loved?",
+            "Verðandi: When do you feel most like yourself?",
+            "Urður: If you could talk to your past self, what would you say?",
+            "Verðandi: What is something about yourself that you have trouble acknowledging?",
+            "Verðandi: What's a misconception people often have about you?",
+            "Verðandi: What is your biggest fear?"
+            ]
     
-            selected_questions = random.sample(questions, 3)
-            collected_answers = ""
+        selected_questions = random.sample(questions, 3)
+        collected_answers = ""
     
-            for question in selected_questions:
-                self.print_slowly(question)
-                answer = input("Answer: ")
-                collected_answers += " " + answer
-            
-            return collected_answers
+        for question in selected_questions:
+            self.print_slowly(question)
+            answer = input("Answer: ")
+            collected_answers += " " + answer.strip()
+        
+        return collected_answers
 
 
     def interpret(self, text_object):
@@ -292,7 +300,7 @@ class Norn:
             self.print_slowly("Verðandi: Thank you for making an effort tonight.")
         elif wordc <= 500:
             self.print_slowly("Urður: We see your words. We see you.")
-            self.print_slowly("Verðandi: Words are powerful. We will use them to see your fotune.")
+            self.print_slowly("Verðandi: Words are powerful. We will use them to see your fortune.")
         else:
             self.print_slowly("Urður: Your words are many, we have much to weave with.")
         
@@ -359,8 +367,9 @@ class Norn:
             self.print_slowly("Skuld: Did we count the Y's?")
             self.print_slowly("Verðandi: No, it is unclear whether this is a vowel or a constonant in the English language.")
             self.print_slowly("Urður: We skipped those entirely.")
+            self.print_slowly(f"Skuld: What about our reading for {self.user_name}? {self.user_pronoun.capitalize()} may have used Y.")
             self.print_slowly("Verðandi: Our creator thought it was irrelevant for the assignment.")
-            self.print_slowly("Skuld: That's fine. The future is not about the y's, it is about the hows.")
+            self.print_slowly("Skuld: Okay. That's fine. The future is not about the y's, it is about the hows.")
             if avrgv <= 30:
                 self.print_slowly("Urður: It is difficult to peak through your rough exterior.")
                 self.print_slowly("Skuld: You're tough. The future may soften you up a bit.")
@@ -377,7 +386,7 @@ class Norn:
             self.print_slowly("Skuld: Maybe one day you will break the fundamentals of math and divide by ZERO.")
             self.print_slowly("Verðandi: But that day is not gonna be today.")
 
-        lemmaset, uniqper = Text.lemma_analysis(text_object)
+        uniqper = Text.lemma_analysis(text_object)
         self.print_slowly(f"Verðandi: {(uniqper * 100):.1f} of your lemmas were unique.")
         if uniqper <= 0.30:
             self.print_slowly("Urður: You have always been set in your way. You feel no need to expand.")
@@ -387,7 +396,7 @@ class Norn:
         elif uniqper <= 0.40:
             self.print_slowly("Urður: You will find your answers in the nearest library.")
             self.print_slowly("Verðandi: A librarian will guide you towards your next adventure.")
-        elif uniqper <= 50:
+        elif uniqper <= 0.50:
             self.print_slowly("Urður: You take good care of your intellectual needs.")
             self.print_slowly("Skuld: Continue to do so at your own pace.")
         else:
@@ -409,7 +418,7 @@ class Norn:
             self.print_slowly("Verðandi: Adding more color wouldn't hurt.")
             self.print_slowly("Skuld: It's up to you.")
         elif postag <= 0.15:
-            self.print_slowly("Urður: You have always been full of emtions.")
+            self.print_slowly("Urður: You have always been full of emotions.")
             self.print_slowly("Verðandi: You have painted quite the picture. Your future has color.")
             self.print_slowly("Skuld: The tapestry is visual.")
         else:
@@ -434,9 +443,9 @@ class Norn:
             self.print_slowly("Urður: Why have details when you can get straight to the point?")
             self.print_slowly("Skuld: The details of your future are unclear.")
         elif stopw <= 0.60: 
-            self.print_slowly("Urður: You are balanced. You can see the big picture.")
-            self.print_slowly("Skuld: Continue on your path.")
-            self.print_slowly("Verðandi: The details are not lost to you either.")
+            self.print_slowly("Urður: You feel balanced. You think you see the big picture.")
+            self.print_slowly("Skuld: You want to continue on your path.")
+            self.print_slowly("Verðandi: The details are not lost to you either, you claim.")
             self.print_slowly("Skuld: Your future is clear like your vision.")
         else:
             self.print_slowly("Urður: It is difficult to navigate through your thoughts.")
@@ -454,28 +463,12 @@ class Norn:
         rune_meaning = rune.get_rune_interpretation(rune_symbol, emotion)
         self.print_slowly(f"Skuld: What this means for you: {rune_meaning}")
         time.sleep(1)
-
-    # Save the ENTIRE Text object after analysis
-    def save_analysis(self, text_obj):
-        with open('last_analysis.pkl', 'wb') as f:
-            pickle.dump(text_obj, f)
-        print("Skuld: Your analysis has now been saved on your computer.")
-
-    # Load it later
-    def load_previous_analysis(self):
-        pass
-        try:
-            with open('last_analysis.pkl', 'rb') as f:
-                text_obj = pickle.load(f)
-            print("Urður: I remember your last visit...")
-            return text_obj
-        except FileNotFoundError:
-            return None
         
     def goodbye(self):
         self.print_slowly("Skuld: That's it.")
         self.print_slowly("Verðandi: Your visit has been pleasant.")
-        self.print_slowly("Urður: Your tapestry will stay with us.")
+        self.print_slowly("Skuld: Do enjoy the .csv and the graphs.")
+        self.print_slowly("Urður: Your life's tapestry will stay with us.")
         self.print_slowly("Skuld: Mortals don't get to see it.")
         self.print_slowly("Verðand: Nor do gods.")
         self.print_slowly("Skuld: You'll will make due with our analysis and rune reading.")
@@ -484,7 +477,7 @@ class Norn:
 """
 
 TEXT CLASS:
-Explain this class.
+This class handles the data processing. It calculates the text collected from the user in the Norn class, processes it and returns various information which the Norn class eventually uses for interpretation.
 
 """
 
@@ -497,7 +490,7 @@ class Text:
         except Exception as e:
             print(f"Skuld: Something went wrong! We must shut this down: {e}")
             raise
-    
+
     # 1 Count number of words
     def count_words(self):
         try:
@@ -563,19 +556,10 @@ class Text:
     # 6.A The average number of vowels in a word 
     def average_vowels(self):
         try:
-            vowels = "aeiouAEIOU"
-            consonants = "bcdfghjklmnpqrstvwxyzBCDFGHJKLMNPQRSTVWXYZ"
-            vowel_count = 0
-            consonant_count = 0
-            for wordform in self.wordforms:
-                for letter in wordform:
-                    if letter in vowels:
-                        vowel_count += 1
-                    if letter in consonants:
-                        consonant_count += 1
-                return vowel_count / (vowel_count + consonant_count)
-        except ZeroDivisionError:
-            print("Skuld: I couldn't find the average vowel percentage: We will divide by ZERO when Ragnarök comes!")
+            percentages = self.vowel_percentage()
+            if not percentages:
+                return 0
+            return sum(percentages) / len(percentages)
         except Exception as e:
             print(f"Skuld: I wasn't able to find the average percentage of your vowels in a word: {e}")
     
@@ -600,11 +584,11 @@ class Text:
             # If list is empty or all zeros
             if not vl_percentage_list or all(v == 0 for v in vl_percentage_list):
                 print("Skuld: You talk funny. Your text has no vowels!")
-                return []  
+                print("Verðandi: You can't be the hero if you divide by ZERO!")
+                print("Urður: I will fix it, corrupt the data myself. We will return one 0.00001 in a list.")
+                return [0.00001]  
             
             return vl_percentage_list
-        except ZeroDivisionError:
-            print("Skuld: I couldn't find the vowel percentage: You can't be the hero if you divide by ZERO!")
         except Exception as e:
             print(f"Skuld: I wasn't able to find out how many vowels you use per word: {e}")
 
@@ -612,8 +596,9 @@ class Text:
     def lemma_analysis(self):
         try:
             set_of_lemmas = set(self.lemmas)
-            percentage_unique = len(set_of_lemmas) / len(self.lemmas)
-            return set_of_lemmas, percentage_unique # "You used X% unique words, you have thought about this thoroughly"
+            return len(set_of_lemmas) / len(self.lemmas) # "You used X% unique words, you have thought about this thoroughly"
+        except ZeroDivisionError:
+            print("Skuld: Error! You're trying to divide a set of lemmas with ZERO!")
         except Exception as e:
             print(f"Skuld: I wasn't able to get the lemmas to your wordforms: {e}")
     
@@ -630,15 +615,23 @@ class Text:
         except Exception as e:
             print(f"Skuld: I wasn't able to find the frequencies of your lemmas: {e}")
     
+    # 8. Pre-count POS-tags
+    def _count_all_tags(self):
+        try:
+            tag_counter = {}
+            for tag in self.tags:
+                tag_counter[tag] = tag_counter.get(tag, 0) + 1
+            return tag_counter
+        except Exception as e:
+            print(f"Skuld: I wasn't able to count your POS-tags! {e}")
+
     # 8.A POS-tags
     def pos_tags_adj(self):
         try:
-            descriptive_tags = ["RB", "RBR", "RBS", "JJ", "JJR", "JJS"]
-            descriptive_words = 0
-            for tag in self.tags:
-                if tag in descriptive_tags:
-                    descriptive_words += 1
-            return descriptive_words / len(self.tags) # Percentage of the descriptive words "X% of your text is adverbs and adjectives, you can paint a picture"
+            descriptive = ["RB", "RBR", "RBS", "JJ", "JJR", "JJS"]
+            counts = self._count_all_tags()
+            desc_count = sum(counts.get(tag, 0) for tag in descriptive)
+            return desc_count / len(self.tags)
         except ZeroDivisionError:
             print("Skuld: I couldn't find the descriptive word ratio: If you wish to know your might, by ZERO, you must not divide!")
         except Exception as e:
@@ -666,13 +659,8 @@ class Text:
                 "EXISTENTIAL": ["EX"]
                 }
 
-            # Counting the tags
-            tag_counter = {}
-            for tag in self.tags:
-                if tag in tag_counter:
-                    tag_counter[tag] += 1
-                else:
-                    tag_counter[tag] = 1
+            # Counting the tags - reused
+            tag_counter = self._count_all_tags()  
 
             # Grouping the tags
             group_counter = {}
@@ -1001,43 +989,39 @@ class Text:
 
     # Save file: CSV
     def save_file(self, filename="fortune_results"):
-
-        df.to_csv(f"{filename}.csv", index=False)
         try:
-            with open(filename, "w") as f:
-                data = {
-                    "Category" : [
-                        "Word Count",
-                        "Average Sentence Length",
-                        "Number of Question Marks",
-                        "Number of Exclamation Marks",
-                        "First Word",
-                        "Last Word",
-                        "Vowel Usage",
-                        "Lemma Analysis",
-                        "Descriptive Words Percentage",
-                        "Stop Word Percentage",
-                        "Primary Emotion"
-                    ],
-                    "Value" : [
-                        self.count_words(),
-                        f"{self.average_sent():.2f}",
-                        self.questionm(),
-                        self.exclamationm(),
-                        self.first_last()[0],
-                        self.first_last()[1],
-                        f"{(self.average_vowels() * 100):.2f}%",
-                        f"{self.lemma_analysis()[1]:.2f}",
-                        f"{(self.pos_tags_adj() * 100):.2f}",
-                        f"{(self.stop_words() * 100):.2f}",
-                        self.analyze_emotion(),
-                    ]
-                }
+            data = {
+                "Category" : [
+                    "Word Count",
+                    "Average Sentence Length",
+                    "Number of Question Marks",
+                    "Number of Exclamation Marks",
+                    "First Word",
+                    "Last Word",
+                    "Vowel Usage",
+                    "Lemma Analysis",
+                    "Descriptive Words Percentage",
+                    "Stop Word Percentage",
+                    "Primary Emotion"
+                ],
+                "Value" : [
+                    self.count_words(),
+                    f"{self.average_sent():.1f}",
+                    self.questionm(),
+                    self.exclamationm(),
+                    self.first_last()[0],
+                    self.first_last()[1],
+                    f"{(self.average_vowels()):.1f}%",
+                    f"{(self.lemma_analysis() * 100):.1f}%",
+                    f"{(self.pos_tags_adj() * 100):.1f}%",
+                    f"{(self.stop_words() * 100):.1f}%",
+                    self.analyze_emotion(),
+                ]
+            }
 
-                df = pd.DataFrame(data)
-
-                df.to_csv("my_fortune.csv", index=False)
-                print("\nSkuld: Your results have been saved to my_fortune.csv")
+            df = pd.DataFrame(data)
+            df.to_csv(f"{filename}.csv", index=False)
+            print(f"\nSkuld: Your results have been saved to {filename}.csv")
                 
         except Exception as e:
             print(f"Skuld: Creating: comma ... separated ... values ... No, I cannot create this file for you: {e}")
@@ -1048,13 +1032,20 @@ def main():
     try:
         norn = Norn() 
 
+        # Optional fast mode
+        mode = input("Type FAST for fast mode, or press ENTER for normal mode: ").lower()
+        fast = (mode == "fast")
+        norn = Norn(fast_mode=fast)
+
+        # Welcome user
         norn.greet_user()
         norn.explain_concept()
         norn.explain_imports()
 
-        collected_text = ""
+        # Collect data
         norn.print_slowly("\nVerðandi: We must collect your words now.")
         choice = norn.collect_first_choice()
+        
         if choice == 'f':
             new_text = norn.read_file()  # Call read_file
         elif choice == 't':
@@ -1064,21 +1055,26 @@ def main():
         text_obj = Text(collected_text)
 
         output_filename = input("Skuld: What shall we name your fortune file? (without extension): ")  
+        if not output_filename: # In case the user doesn't comply
+            output_filename = "my_fortune"
         text_obj.save_file(output_filename) 
-        Text.save_file(text_obj)
 
+        # Interpret
         norn.interpret(text_obj)
+
+        # Draw rune
         emotion = Text.analyze_emotion(text_obj)
         print(f"You're thinking about: {emotion.upper()}")
         norn.select_rune(emotion)
-        norn.save_analysis(text_obj)
 
         # Generate visualizations
-        text_obj.word_freq_visual()
-        text_obj.pos_visual()
-        text_obj.sentence_visual()
-        text_obj.emotion_visual()
-        text_obj.lemma_visual()
+        norn.print_slowly("\nVerðandi: We are weaving your visual tapestry...")
+        text_obj.graph_sentence_length()
+        text_obj.graph_vowel_percentage_plot()
+        text_obj.graph_emotion_lemmas()
+        text_obj.graph_top_lemmas()
+        text_obj.graph_POS_pie()
+        norn.print_slowly("Skuld: Your graphs are ready in your computer!")
 
         norn.goodbye()
     except Exception as e:
